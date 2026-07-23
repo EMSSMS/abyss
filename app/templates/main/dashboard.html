@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-dashboard"></i> Dashboard</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Today's SMS</div>
+            <div class="stat-number">{{ today_sms|default(0) }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <div class="stat-label">This Week</div>
+            <div class="stat-number">{{ week_sms|default(0) }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card blue">
+            <div class="stat-label">This Month</div>
+            <div class="stat-number">{{ month_sms|default(0) }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card orange">
+            <div class="stat-label">SMS Ranges</div>
+            <div class="stat-number">{{ ranges_count|default(0) }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">My Numbers</div>
+            <div class="stat-number">{{ numbers_count|default(0) }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card green">
+            <div class="stat-label">My Clients</div>
+            <div class="stat-number">{{ clients_count|default(0) }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card blue">
+            <div class="stat-label">API Token</div>
+            <div class="stat-number" style="font-size: 14px;">{% if current_user.api_token %}{{ current_user.api_token[:32] }}...{% else %}<span style="color:#aaa;">No token — generate one in Settings</span>{% endif %}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <!-- Chart Section -->
+    <div class="col-md-8">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-bar-chart"></i> SMS Activity (Last 7 Days)</h5>
+            </div>
+            <div class="widget-content">
+                <canvas id="smsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- News Section -->
+    <div class="col-md-4">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-bullhorn"></i> Latest News</h5>
+            </div>
+            <div class="widget-content">
+                {% if news %}
+                <ul class="list-unstyled">
+                    {% for item in news %}
+                    <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <strong>{{ item.headline }}</strong>
+                        <br><small class="text-muted">{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No news available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <!-- Recent Clients -->
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-users"></i> Recent Clients</h5>
+            </div>
+            <div class="widget-content">
+                {% if recent_clients %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in recent_clients %}
+                        <tr>
+                            <td>{{ client.username }}</td>
+                            <td>{{ client.email }}</td>
+                            <td>
+                                {% if client.is_active %}
+                                <span class="label label-success">Active</span>
+                                {% else %}
+                                <span class="label label-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No clients found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-link"></i> Quick Links</h5>
+            </div>
+            <div class="widget-content">
+                <div class="list-group">
+                    <a href="{{ url_for('main.sms_ranges') }}" class="list-group-item">
+                        <i class="fa fa-flag"></i> Browse SMS Ranges
+                    </a>
+                    <a href="{{ url_for('main.my_sms_numbers') }}" class="list-group-item">
+                        <i class="fa fa-phone"></i> My SMS Numbers
+                    </a>
+                    <a href="{{ url_for('main.sms_cdr_reports') }}" class="list-group-item">
+                        <i class="fa fa-file-text"></i> SMS CDR Reports
+                    </a>
+                    <a href="{{ url_for('main.clients') }}" class="list-group-item">
+                        <i class="fa fa-users"></i> Manage Clients
+                    </a>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('admin.index') }}" class="list-group-item" style="color: #e94560;">
+                        <i class="fa fa-shield"></i> Admin Panel
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('smsChart').getContext('2d');
+    var chartData = {{ chart_data|tojson|safe }};
+
+    var labels = chartData.map(function(item) { return item.date; });
+    var data = chartData.map(function(item) { return item.count; });
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'SMS Count',
+                data: data,
+                backgroundColor: 'rgba(233, 69, 96, 0.7)',
+                borderColor: 'rgba(233, 69, 96, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
