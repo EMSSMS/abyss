@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ABYSS SMS{% endblock %}</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    <style>
+    /* ── CSS Variables ─────────────────────────── */
+    :root {
+        --bg:      #0d0d0d;
+        --card:    #1a1a1a;
+        --hover:   #242424;
+        --border:  #2e2e2e;
+        --txt:     #e8e8e8;
+        --muted:   #888;
+        --accent:  #00d4ff;
+        --danger:  #ff4757;
+        --success: #2ed573;
+        --warn:    #ffa502;
+        --sb-w:    240px;   /* sidebar width */
+        --nav-h:   56px;    /* topbar height */
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{font-size:14px;scroll-behavior:smooth;}
+    body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+         background:var(--bg);color:var(--txt);min-height:100vh;}
+
+    /* ── Topbar ────────────────────────────────── */
+    .topbar {
+        position: fixed; top:0; left:0; right:0; z-index:1050;
+        height: var(--nav-h);
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center;
+        padding: 0 16px; gap: 12px;
+    }
+    .topbar-brand {
+        font-size: 18px; font-weight: 800; letter-spacing: 1px;
+        color: var(--accent); text-decoration: none;
+        white-space: nowrap;
+    }
+    .topbar-brand:hover { color: var(--accent); text-decoration: none; }
+    .topbar-spacer { flex: 1; }
+    .topbar-user {
+        display: flex; align-items: center; gap: 8px;
+        color: var(--muted); font-size: 13px; white-space: nowrap;
+    }
+    .topbar-user strong { color: var(--txt); }
+    .topbar-user a { color: var(--muted); font-size: 12px; text-decoration: none; }
+    .topbar-user a:hover { color: var(--danger); }
+    .hamburger {
+        background: none; border: none; cursor: pointer;
+        color: var(--txt); font-size: 20px; padding: 6px;
+        border-radius: 6px; transition: background .2s;
+        display: none;  /* hidden on desktop */
+    }
+    .hamburger:hover { background: var(--hover); }
+
+    /* ── Sidebar ────────────────────────────────── */
+    .sidebar {
+        position: fixed; top: var(--nav-h); left: 0;
+        width: var(--sb-w); height: calc(100vh - var(--nav-h));
+        background: var(--card); border-right: 1px solid var(--border);
+        overflow-y: auto; z-index: 1040;
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar::-webkit-scrollbar { width:4px; }
+    .sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    /* Sidebar user badge */
+    .sb-user {
+        padding: 16px 20px 14px;
+        border-bottom: 1px solid var(--border);
+    }
+    .sb-user-name  { font-weight: 700; font-size: 14px; color: var(--txt); }
+    .sb-user-role  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* Nav items */
+    .sb-nav { list-style: none !important; padding: 8px 0; }
+    .sb-nav li { list-style: none !important; }
+
+    .sb-link {
+        display: flex; align-items: center; gap: 11px;
+        padding: 11px 20px;
+        color: var(--muted); text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all .2s; font-size: 13.5px;
+        cursor: pointer;
+    }
+    .sb-link:hover, .sb-link.active {
+        background: var(--hover);
+        color: var(--accent);
+        border-left-color: var(--accent);
+        text-decoration: none;
+    }
+    .sb-link i { width: 18px; text-align: center; flex-shrink: 0; font-size: 15px; }
+    .sb-link .sb-arrow {
+        margin-left: auto; font-size: 11px;
+        transition: transform .25s;
+    }
+    .sb-link.open .sb-arrow { transform: rotate(90deg); }
+
+    /* Accordion sub-menu — PUSHES CONTENT DOWN */
+    .sb-sub {
+        list-style: none !important;
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height .3s ease;
+        background: rgba(0,0,0,.18);
+    }
+    .sb-sub.expanded { max-height: 600px; }
+    .sb-sub li { list-style: none !important; }
+    .sb-sub .sb-link {
+        padding-left: 48px; font-size: 13px;
+        border-left: none; border-left: 3px solid transparent;
+    }
+
+    /* Section label */
+    .sb-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+        color: var(--muted); padding: 14px 20px 4px;
+        text-transform: uppercase;
+    }
+    .sb-divider { height:1px; background:var(--border); margin: 8px 16px; }
+
+    /* ── Main content ────────────────────────────── */
+    .page-wrap {
+        margin-left: var(--sb-w);
+        padding: calc(var(--nav-h) + 28px) 28px 28px;
+        min-height: 100vh;
+        transition: margin-left .28s;
+    }
+
+    /* ── Overlay (mobile) ────────────────────────── */
+    .sb-overlay {
+        display: none; position: fixed; inset: 0; z-index: 1039;
+        background: rgba(0,0,0,.6);
+    }
+
+    /* ── Flash messages ──────────────────────────── */
+    .flash-bar { margin-bottom: 18px; }
+    .flash-bar .alert {
+        display: flex; align-items: center; gap: 10px;
+        border-radius: 8px; padding: 12px 18px; font-size: 13.5px;
+    }
+    .close-btn {
+        margin-left: auto; background: none; border: none;
+        font-size: 18px; cursor: pointer; color: inherit; opacity: .7;
+        line-height: 1; padding: 0 4px;
+    }
+    .close-btn:hover { opacity: 1; }
+
+    /* ── Responsive breakpoints ──────────────────── */
+    @media (max-width: 991px) {
+        .hamburger  { display: flex; }
+        .sidebar    { transform: translateX(-100%); }
+        .sidebar.open { transform: translateX(0); }
+        .sb-overlay.open { display: block; }
+        .page-wrap  { margin-left: 0; padding: calc(var(--nav-h) + 20px) 16px 20px; }
+    }
+    @media (max-width: 575px) {
+        .topbar-user .u-details { display: none; }
+        .page-wrap { padding: calc(var(--nav-h) + 14px) 10px 14px; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ════════════════════════════════════════════════════════════ -->
+<div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="menu">
+        <i class="fa fa-bars"></i>
+    </button>
+    <a class="topbar-brand" href="{{ url_for('main.dashboard') }}">
+        ⬛ ABYSS SMS
+    </a>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-user">
+        <span class="u-details">
+            <strong>{{ current_user.username }}</strong>
+            <span style="margin:0 6px;opacity:.4;">|</span>
+            <span>{{ current_user.role.display_name if current_user.role else 'User' }}</span>
+            <span style="margin:0 6px;opacity:.4;">|</span>
+        </span>
+        <a href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out"></i> Logout</a>
+    </div>
+</div>
+
+<!-- ══ SIDEBAR OVERLAY (mobile tap to close) ═════════════════════════════ -->
+<div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+<nav class="sidebar" id="sidebar">
+    <div class="sb-user">
+        <div class="sb-user-name">{{ current_user.username }}</div>
+        <div class="sb-user-role">{{ current_user.role.display_name if current_user.role else 'User' }}</div>
+    </div>
+
+    <ul class="sb-nav">
+        <!-- Dashboard -->
+        <li>
+            <a href="{{ url_for('main.dashboard') }}"
+               class="sb-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                <i class="fa fa-th-large"></i> Dashboard
+            </a>
+        </li>
+
+        <!-- SMS accordion -->
+        <li>
+            <span class="sb-link {% if request.endpoint in ('main.sms_ranges','main.my_sms_numbers','main.sms_cdr_reports','main.inbox') %}active open{% endif %}"
+                  onclick="toggleAccordion(this,'sub-sms')">
+                <i class="fa fa-mobile"></i> SMS
+                <i class="fa fa-chevron-right sb-arrow"></i>
+            </span>
+            <ul class="sb-sub {% if request.endpoint in ('main.sms_ranges','main.my_sms_numbers','main.sms_cdr_reports','main.inbox') %}expanded{% endif %}"
+                id="sub-sms">
+                <li><a href="{{ url_for('main.sms_ranges') }}"
+                       class="sb-link {% if request.endpoint == 'main.sms_ranges' %}active{% endif %}">
+                    <i class="fa fa-flag"></i> Ranges
+                </a></li>
+                <li><a href="{{ url_for('main.my_sms_numbers') }}"
+                       class="sb-link {% if request.endpoint == 'main.my_sms_numbers' %}active{% endif %}">
+                    <i class="fa fa-list-ol"></i> My Numbers
+                </a></li>
+                <li><a href="{{ url_for('main.inbox') }}"
+                       class="sb-link {% if request.endpoint == 'main.inbox' %}active{% endif %}">
+                    <i class="fa fa-inbox"></i> Inbox
+                </a></li>
+                <li><a href="{{ url_for('main.sms_cdr_reports') }}"
+                       class="sb-link {% if request.endpoint == 'main.sms_cdr_reports' %}active{% endif %}">
+                    <i class="fa fa-file-text-o"></i> CDR Reports
+                </a></li>
+            </ul>
+        </li>
+
+        <!-- Clients -->
+        <li>
+            <a href="{{ url_for('main.clients') }}"
+               class="sb-link {% if request.endpoint == 'main.clients' %}active{% endif %}">
+                <i class="fa fa-users"></i> Clients
+            </a>
+        </li>
+
+        <!-- Notifications -->
+        <li>
+            <a href="{{ url_for('main.notifications') }}"
+               class="sb-link {% if request.endpoint == 'main.notifications' %}active{% endif %}">
+                <i class="fa fa-bell"></i> Notifications
+            </a>
+        </li>
+
+        {% if current_user.is_agent() or current_user.is_admin() %}
+        <div class="sb-divider"></div>
+        <div class="sb-label">Agent</div>
+
+        <!-- Agent accordion -->
+        <li>
+            <span class="sb-link {% if request.endpoint in ('admin.agent_add_numbers','admin.agent_my_numbers','admin.agent_create_client','admin.agent_clients') %}active open{% endif %}"
+                  onclick="toggleAccordion(this,'sub-agent')">
+                <i class="fa fa-user-circle"></i> My Account
+                <i class="fa fa-chevron-right sb-arrow"></i>
+            </span>
+            <ul class="sb-sub {% if request.endpoint in ('admin.agent_add_numbers','admin.agent_my_numbers','admin.agent_create_client','admin.agent_clients') %}expanded{% endif %}"
+                id="sub-agent">
+                <li><a href="{{ url_for('admin.agent_add_numbers') }}"
+                       class="sb-link {% if request.endpoint == 'admin.agent_add_numbers' %}active{% endif %}">
+                    <i class="fa fa-plus-circle"></i> Add Numbers
+                </a></li>
+                <li><a href="{{ url_for('admin.agent_my_numbers') }}"
+                       class="sb-link {% if request.endpoint == 'admin.agent_my_numbers' %}active{% endif %}">
+                    <i class="fa fa-list-ol"></i> My Numbers
+                </a></li>
+                <li><a href="{{ url_for('admin.agent_create_client') }}"
+                       class="sb-link {% if request.endpoint == 'admin.agent_create_client' %}active{% endif %}">
+                    <i class="fa fa-user-plus"></i> Add Client
+                </a></li>
+                <li><a href="{{ url_for('admin.agent_clients') }}"
+                       class="sb-link {% if request.endpoint == 'admin.agent_clients' %}active{% endif %}">
+                    <i class="fa fa-users"></i> My Clients
+                </a></li>
+            </ul>
+        </li>
+        {% endif %}
+
+        {% if current_user.is_developer() %}
+        <div class="sb-divider"></div>
+        <div class="sb-label">Developer</div>
+        <li>
+            <span class="sb-link {% if request.endpoint and request.endpoint.startswith('dev.') %}active open{% endif %}"
+                  onclick="toggleAccordion(this,'sub-dev')">
+                <i class="fa fa-code"></i> Static Assets
+                <i class="fa fa-chevron-right sb-arrow"></i>
+            </span>
+            <ul class="sb-sub {% if request.endpoint and request.endpoint.startswith('dev.') %}expanded{% endif %}"
+                id="sub-dev">
+                <li><a href="{{ url_for('dev.index') }}"
+                       class="sb-link {% if request.endpoint == 'dev.index' %}active{% endif %}">
+                    <i class="fa fa-th"></i> All Assets
+                </a></li>
+                <li><a href="{{ url_for('dev.upload') }}?type=img"
+                       class="sb-link"><i class="fa fa-image"></i> Images
+                </a></li>
+                <li><a href="{{ url_for('dev.upload') }}?type=css"
+                       class="sb-link"><i class="fa fa-paint-brush"></i> CSS
+                </a></li>
+                <li><a href="{{ url_for('dev.upload') }}?type=js"
+                       class="sb-link"><i class="fa fa-bolt"></i> JavaScript
+                </a></li>
+                <li><a href="{{ url_for('dev.pages_list') }}"
+                       class="sb-link {% if request.endpoint in ('dev.pages_list','dev.page_view') %}active{% endif %}">
+                    <i class="fa fa-file-code-o"></i> HTML Pages
+                </a></li>
+                <li><a href="{{ url_for('dev.upload') }}?type=html"
+                       class="sb-link"><i class="fa fa-plus"></i> New Page
+                </a></li>
+            </ul>
+        </li>
+        {% endif %}
+
+        <div class="sb-divider"></div>
+        <div class="sb-label">Account</div>
+
+        <li>
+            <a href="{{ url_for('main.profile') }}"
+               class="sb-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
+                <i class="fa fa-user"></i> Profile
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.profile') }}"
+               class="sb-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
+                <i class="fa fa-cog"></i> Settings
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('main.my_activity') }}"
+               class="sb-link {% if request.endpoint == 'main.my_activity' %}active{% endif %}">
+                <i class="fa fa-history"></i> Activity
+            </a>
+        </li>
+
+        {% if current_user.is_admin() %}
+        <div class="sb-divider"></div>
+        <div class="sb-label" style="color:var(--danger);">Admin</div>
+        <li>
+            <span class="sb-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active open{% endif %}"
+                  style="color:var(--danger);"
+                  onclick="toggleAccordion(this,'sub-admin')">
+                <i class="fa fa-shield"></i> Admin Panel
+                <i class="fa fa-chevron-right sb-arrow"></i>
+            </span>
+            <ul class="sb-sub {% if request.endpoint and request.endpoint.startswith('admin.') %}expanded{% endif %}"
+                id="sub-admin">
+                <li><a href="{{ url_for('admin.index') }}"         class="sb-link"><i class="fa fa-dashboard"></i> Overview</a></li>
+                <li><a href="{{ url_for('admin.users') }}"         class="sb-link"><i class="fa fa-users"></i> Users</a></li>
+                <li><a href="{{ url_for('admin.sms_ranges') }}"    class="sb-link"><i class="fa fa-flag"></i> Ranges</a></li>
+                <li><a href="{{ url_for('admin.sms_numbers') }}"   class="sb-link"><i class="fa fa-phone"></i> Numbers</a></li>
+                <li><a href="{{ url_for('admin.sms_cdr') }}"       class="sb-link"><i class="fa fa-file-text"></i> CDR</a></li>
+                <li><a href="{{ url_for('admin.activity_logs') }}" class="sb-link"><i class="fa fa-history"></i> Logs</a></li>
+                <li><a href="{{ url_for('monitor.index') }}"       class="sb-link"><i class="fa fa-rss"></i> SMS Monitor</a></li>
+            </ul>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<!-- ══ MAIN CONTENT ════════════════════════════════════════════════════════ -->
+<div class="page-wrap" id="pageWrap">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-bar">
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">
+            <i class="fa {% if cat == 'success' %}fa-check-circle{% elif cat == 'danger' %}fa-times-circle{% else %}fa-info-circle{% endif %}"></i>
+            {{ msg }}
+            <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+{% block extra_js %}{% endblock %}
+
+<script>
+/* ── Sidebar toggle (mobile) ──────────────────── */
+function toggleSidebar() {
+    var sb  = document.getElementById('sidebar');
+    var ov  = document.getElementById('sbOverlay');
+    sb.classList.toggle('open');
+    ov.classList.toggle('open');
+}
+
+/* ── Accordion nav (PUSHES content down) ─────── */
+function toggleAccordion(trigger, subId) {
+    var sub = document.getElementById(subId);
+    if (!sub) return;
+    var isOpen = sub.classList.contains('expanded');
+
+    // Close all others in same level
+    document.querySelectorAll('.sb-sub.expanded').forEach(function(el) {
+        if (el !== sub) {
+            el.classList.remove('expanded');
+            var t = el.previousElementSibling;
+            if (t) t.classList.remove('open');
+        }
+    });
+
+    // Toggle this one
+    sub.classList.toggle('expanded', !isOpen);
+    trigger.classList.toggle('open', !isOpen);
+}
+
+/* ── Auto-dismiss flash after 6s ─────────────── */
+setTimeout(function() {
+    document.querySelectorAll('.flash-bar .alert').forEach(function(el) {
+        el.style.transition = 'opacity .5s';
+        el.style.opacity = '0';
+        setTimeout(function() { el.remove(); }, 500);
+    });
+}, 6000);
+</script>
+</body>
+</html>
