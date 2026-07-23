@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ asset.filename }} — ABYSS SMS{% endblock %}
+{% block extra_css %}
+<style>
+.code-editor{font-family:'Courier New',monospace;font-size:13px;background:#0a0a0a;
+  color:#e8e8e8;border-radius:6px;border:1px solid var(--border);padding:12px;
+  min-height:350px;width:100%;resize:vertical;tab-size:2;}
+.code-editor:focus{border-color:var(--accent);outline:none;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+    <h4><i class="fa fa-edit"></i> Edit: <code>{{ asset.filename }}</code>
+        <span class="label label-info" style="vertical-align:middle;margin-left:8px;">{{ asset.asset_type.upper() }}</span>
+    </h4>
+</div>
+<div class="widget-block">
+    <div class="widget-head"><h5>Edit Asset</h5>
+        {% if asset.asset_type == 'html' %}
+        <a href="{{ url_for('dev.page_view', slug=asset.slug) }}" target="_blank" class="btn btn-sm btn-info">
+            <i class="fa fa-external-link"></i> Preview Page
+        </a>
+        {% endif %}
+    </div>
+    <div class="widget-content">
+        <form method="POST">
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Title</label></div>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" value="{{ asset.title or '' }}">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Description</label></div>
+                    <div class="col-sm-9">
+                        <input type="text" name="description" class="form-control" value="{{ asset.description or '' }}">
+                    </div>
+                </div>
+            </div>
+            {% if asset.asset_type != 'img' %}
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Content</label>
+                        <div style="margin-top:6px;"><span class="label label-info">{{ asset.asset_type.upper() }}</span></div>
+                        {% if asset.asset_type == 'html' %}
+                        <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+                            Live URL:<br><code style="font-size:10px;">/dev/pages/{{ asset.slug }}</code>
+                        </div>
+                        {% elif asset.asset_type == 'css' %}
+                        <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+                            Serve URL:<br><code style="font-size:10px;">/dev/serve/css/{{ asset.id }}</code>
+                        </div>
+                        {% elif asset.asset_type == 'js' %}
+                        <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+                            Serve URL:<br><code style="font-size:10px;">/dev/serve/js/{{ asset.id }}</code>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-9">
+                        <textarea name="content" class="code-editor">{{ asset.content or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Active</label></div>
+                    <div class="col-sm-9">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="is_active" {% if asset.is_active %}checked{% endif %}> Enable
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-9 col-sm-offset-3">
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                        <a href="{{ url_for('dev.index') }}" class="btn btn-default" style="margin-left:8px;">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

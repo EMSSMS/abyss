@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}HTML Pages — ABYSS SMS{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+    <h4><i class="fa fa-file-code-o"></i> HTML Pages</h4>
+</div>
+<div class="widget-block">
+    <div class="widget-head">
+        <h5>All Pages</h5>
+        <a href="{{ url_for('dev.upload') }}?type=html" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> New Page</a>
+    </div>
+    <div class="widget-content" style="padding:0;">
+        {% if pages %}
+        <table class="table table-hover">
+            <thead><tr><th>#</th><th>Filename</th><th>Title</th><th>Live URL</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for p in pages %}
+            <tr>
+                <td style="color:var(--muted);">{{ p.id }}</td>
+                <td><code>{{ p.filename }}</code></td>
+                <td>{{ p.title or '—' }}</td>
+                <td>
+                    <a href="{{ url_for('dev.page_view', slug=p.slug) }}" target="_blank">
+                        <i class="fa fa-external-link"></i> /dev/pages/{{ p.slug }}
+                    </a>
+                </td>
+                <td style="font-size:12px;color:var(--muted);">{{ p.created_at.strftime('%Y-%m-%d') if p.created_at else '—' }}</td>
+                <td>
+                    <a href="{{ url_for('dev.edit', asset_id=p.id) }}" class="btn btn-xs btn-default"><i class="fa fa-edit"></i> Edit</a>
+                    <a href="{{ url_for('dev.page_view', slug=p.slug) }}" target="_blank" class="btn btn-xs btn-info"><i class="fa fa-eye"></i></a>
+                    <form method="POST" action="{{ url_for('dev.delete', asset_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Delete this page permanently?')">
+                        <button class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--muted);">
+            <i class="fa fa-file-code-o fa-3x" style="display:block;margin-bottom:12px;opacity:.4;"></i>
+            No HTML pages yet.<br>
+            <a href="{{ url_for('dev.upload') }}?type=html" class="btn btn-primary" style="margin-top:14px;">
+                <i class="fa fa-plus"></i> Create First Page
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

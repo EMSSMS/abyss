@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Upload Asset — ABYSS SMS{% endblock %}
+{% block extra_css %}
+<style>
+.code-editor {
+    font-family: 'Courier New', monospace; font-size: 13px;
+    background: #0a0a0a; color: #e8e8e8; border-radius: 6px;
+    border: 1px solid var(--border); padding: 12px;
+    min-height: 300px; width: 100%; resize: vertical;
+    tab-size: 2;
+}
+.code-editor:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(0,212,255,.12); }
+.type-btn { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--hover); color: var(--muted); cursor: pointer; transition: all .2s; }
+.type-btn.active { background: var(--accent); color: #0d0d0d; border-color: var(--accent); font-weight: 700; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+    <h4><i class="fa fa-upload"></i> Upload / Create Asset</h4>
+</div>
+
+<div class="widget-block">
+    <div class="widget-head"><h5>Asset Details</h5></div>
+    <div class="widget-content">
+        <form method="POST" id="uploadForm">
+            <!-- Type selector -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Asset Type *</label></div>
+                    <div class="col-sm-9">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% for t, icon, lbl in [('img','image','Image'),('css','paint-brush','CSS'),('js','bolt','JavaScript'),('html','file-code-o','HTML Page')] %}
+                            <button type="button" class="type-btn {% if default_type == t %}active{% endif %}"
+                                    onclick="setType('{{ t }}')" id="typebtn-{{ t }}">
+                                <i class="fa fa-{{ icon }}"></i> {{ lbl }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="asset_type" id="assetType" value="{{ default_type }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filename -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Filename *</label></div>
+                    <div class="col-sm-9">
+                        <input type="text" name="filename" id="filename" class="form-control"
+                               placeholder="e.g. my-style.css" required>
+                        <span class="help-block" id="fnHelp">Extension added automatically if omitted.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Title (HTML only) -->
+            <div class="form-group" id="titleGroup">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Page Title</label></div>
+                    <div class="col-sm-9">
+                        <input type="text" name="title" class="form-control" placeholder="My Custom Page">
+                        <span class="help-block">Shown in &lt;title&gt; and page header.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3"><label class="control-label">Description</label></div>
+                    <div class="col-sm-9">
+                        <input type="text" name="description" class="form-control" placeholder="Optional notes">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content editor -->
+            <div class="form-group" id="contentGroup">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label" id="contentLabel">Content</label>
+                        <div style="margin-top:8px;">
+                            <span class="label label-info" id="langBadge">HTML</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-9">
+                        <textarea name="content" id="contentEditor" class="code-editor"
+                                  placeholder="Paste or write your code here…"></textarea>
+                        <span class="help-block" id="contentHelp"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-9 col-sm-offset-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> Save Asset
+                        </button>
+                        <a href="{{ url_for('dev.index') }}" class="btn btn-default" style="margin-left:8px;">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var TYPE_META = {
+    img:  { ext:'.png',  lang:'Binary/URL', help:'For images, paste a URL or leave content blank.',       title:false },
+    css:  { ext:'.css',  lang:'CSS',        help:'Served at /dev/serve/css/{id}',                         title:false },
+    js:   { ext:'.js',   lang:'JavaScript', help:'Served at /dev/serve/js/{id}',                          title:false },
+    html: { ext:'.html', lang:'HTML',       help:'Each HTML file becomes a live page at /dev/pages/{slug}', title:true  },
+};
+
+function setType(t) {
+    document.getElementById('assetType').value = t;
+    document.querySelectorAll('.type-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.getElementById('typebtn-'+t).classList.add('active');
+    var meta = TYPE_META[t];
+    document.getElementById('langBadge').textContent  = meta.lang;
+    document.getElementById('contentHelp').textContent = meta.help;
+    document.getElementById('titleGroup').style.display = meta.title ? '' : 'none';
+    document.getElementById('contentGroup').style.display = t === 'img' ? 'none' : '';
+    document.getElementById('fnHelp').textContent = 'Extension ' + meta.ext + ' added automatically if omitted.';
+}
+
+setType('{{ default_type }}');
+
+// Tab key in textarea
+document.getElementById('contentEditor').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        var s = this.selectionStart;
+        this.value = this.value.substring(0,s) + '  ' + this.value.substring(this.selectionEnd);
+        this.selectionStart = this.selectionEnd = s + 2;
+    }
+});
+</script>
+{% endblock %}
