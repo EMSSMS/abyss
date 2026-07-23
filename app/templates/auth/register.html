@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABYSS SMS | Register</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .limiter { width: 100%; max-width: 500px; margin: 20px; }
+        .container-login {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .wrap-login { padding: 40px; width: 100%; }
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #e94560;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .input:focus {
+            border-color: #e94560;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-danger { background: #ffe0e6; color: #c23152; border: 1px solid #f5c6cb; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .text-center { text-align: center; }
+        .text-muted { color: #999; }
+    </style>
+</head>
+<body>
+    <div class="limiter">
+        <div class="container-login">
+            <div class="wrap-login">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <h1 class="login-title">Register - ABYSS SMS</h1>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="form-group">
+                        <input type="text" name="username" class="input" placeholder="Username (min 6 characters)" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" class="input" placeholder="Email Address" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="password" class="input" placeholder="Password (min 6 characters)" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="password_confirm" class="input" placeholder="Confirm Password" required>
+                    </div>
+                    <button type="submit" class="login-btn">Register</button>
+                </form>
+
+                <p class="text-center" style="margin-top: 20px;">
+                    Already have an account? <a href="{{ url_for('auth.login') }}" style="color: #e94560;">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
