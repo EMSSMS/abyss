@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">My Numbers</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-success btn-sm" id="downloadSelectedBtn" style="display:none;">
+                            <i class="fas fa-download"></i> Download Selected
+                        </button>
+                        <a href="{{ url_for('admin.agent_download_numbers') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-download"></i> Download All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-phone"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Numbers</span>
+                                    <span class="info-box-number">{{ total_numbers }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-check"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Available</span>
+                                    <span class="info-box-number">{{ available }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-users"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Assigned to Clients</span>
+                                    <span class="info-box-number">{{ assigned_to_clients }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="GET" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="search" class="form-control"
+                                       placeholder="Search by number"
+                                       value="{{ request.args.get('search', '') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>Number</th>
+                                    <th>Prefix</th>
+                                    <th>Range</th>
+                                    <th>Client</th>
+                                    <th>Status</th>
+                                    <th>Assigned Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if numbers.items %}
+                                    {% for num in numbers.items %}
+                                    <tr>
+                                        <td><input type="checkbox" class="number-checkbox" value="{{ num.id }}"></td>
+                                        <td>{{ num.number }}</td>
+                                        <td>{{ num.prefix or '-' }}</td>
+                                        <td>{{ num.sms_range.country if num.sms_range else '-' }}</td>
+                                        <td>
+                                            {% if num.client %}
+                                                <span class="badge badge-info">{{ num.client.username }}</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if num.status == 'available' %}
+                                                <span class="badge badge-success">Available</span>
+                                            {% elif num.status == 'reserved' %}
+                                                <span class="badge badge-warning">Reserved</span>
+                                            {% elif num.status == 'activated' %}
+                                                <span class="badge badge-primary">Activated</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">{{ num.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ num.assigned_at.strftime('%Y-%m-%d %H:%M') if num.assigned_at else '-' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No numbers found.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if numbers.has_prev or numbers.has_next %}
+                    <div class="pagination">
+                        {% if numbers.has_prev %}
+                            <a href="{{ url_for('admin.agent_my_numbers', page=numbers.prev_num, search=request.args.get('search', '')) }}"
+                               class="btn btn-sm btn-secondary">Previous</a>
+                        {% endif %}
+
+                        <span class="mx-2">Page {{ numbers.page }} of {{ numbers.pages }}</span>
+
+                        {% if numbers.has_next %}
+                            <a href="{{ url_for('admin.agent_my_numbers', page=numbers.next_num, search=request.args.get('search', '')) }}"
+                               class="btn btn-sm btn-secondary">Next</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.number-checkbox');
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+
+    // Select all checkbox
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateDownloadButton();
+        });
+    }
+
+    // Individual checkboxes
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateDownloadButton);
+    });
+
+    function updateDownloadButton() {
+        const checked = document.querySelectorAll('.number-checkbox:checked');
+        if (checked.length > 0) {
+            downloadSelectedBtn.style.display = 'inline-block';
+        } else {
+            downloadSelectedBtn.style.display = 'none';
+        }
+    }
+
+    // Download selected numbers
+    if (downloadSelectedBtn) {
+        downloadSelectedBtn.addEventListener('click', function() {
+            const checked = document.querySelectorAll('.number-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+
+            if (ids.length === 0) {
+                alert('Please select at least one number');
+                return;
+            }
+
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("admin.agent_download_numbers") }}';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_ids';
+            input.value = ids.join(',');
+            form.appendChild(input);
+
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

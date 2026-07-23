@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">إعدادات حذف الرسائل (Message Auto-Delete Settings)</h3>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" id="settingsForm">
+                        <div class="form-group">
+                            <label for="client_username">يوزر العميل</label>
+                            <input type="text" name="client_username" id="client_username"
+                                   class="form-control" placeholder="اكتب يوزر العميل هنا..."
+                                   autocomplete="off" required>
+                            <small class="form-text text-muted">
+                                سيتم البحث عن العميل تلقائياً
+                            </small>
+                            <div id="userSearchResult" class="mt-2"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delete_mode">طريقة حذف الرسائل</label>
+                            <select name="delete_mode" id="delete_mode" class="form-control">
+                                <option value="never">لا تحذف أبداً (Never Delete)</option>
+                                <option value="minutes">حذف بعدد دقائق</option>
+                                <option value="hours">حذف بعدد ساعات</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="deleteValueGroup" style="display: none;">
+                            <label for="delete_value">القيمة (عدد الدقائق أو الساعات)</label>
+                            <input type="number" name="delete_value" id="delete_value"
+                                   class="form-control" value="5" min="1">
+                            <small class="form-text text-muted">
+                                أدخل عدد الدقائق أو الساعات بعدها سيتم حذف الرسائل
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>ملاحظة:</strong>
+                            هذه الإعدادات تتحكم في حذف الرسائل الواردة تلقائياً.
+                            <ul class="mb-0 mt-2">
+                                <li><strong>"لا تحذف أبداً":</strong> الرسائل ستظل محفوظة للأبد</li>
+                                <li><strong>"حذف بعدد دقائق":</strong> الرسائل ستُحذف بعد X دقيقة</li>
+                                <li><strong>"حذف بعدد ساعات":</strong> الرسائل ستُحذف بعد X ساعة</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> حفظ الإعدادات
+                        </button>
+                        <a href="{{ url_for('admin.admin_clients') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> العودة لإدارة العملاء
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title">قائمة العملاء والإعدادات الحالية</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>يوزر العميل</th>
+                                <th>الإيميل</th>
+                                <th>الوكيل</th>
+                                <th>عدد الأرقام</th>
+                                <th>إعدادات الحذف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                            <tr>
+                                <td><strong>{{ client.username }}</strong></td>
+                                <td>{{ client.email }}</td>
+                                <td>{{ client.agent.username if client.agent else '-' }}</td>
+                                <td>{{ client.purchased_numbers.count() }}</td>
+                                <td>
+                                    {% if client.delete_messages_after %}
+                                        {% if client.delete_messages_after < 60 %}
+                                            حذف بعد {{ client.delete_messages_after }} دقيقة
+                                        {% else %}
+                                            حذف بعد {{ (client.delete_messages_after / 60)|round|int }} ساعة
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge badge-secondary">لا تحذف</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">لا يوجد عملاء</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('client_username').addEventListener('input', function() {
+    const username = this.value.trim();
+    const resultDiv = document.getElementById('userSearchResult');
+
+    if (username.length < 2) {
+        resultDiv.innerHTML = '';
+        return;
+    }
+
+    fetch(`/admin/search-user?username=${encodeURIComponent(username)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.found) {
+                if (data.role === 'client') {
+                    resultDiv.innerHTML = `<div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> تم العثور على العميل: <strong>${data.username}</strong>
+                        (${data.email})
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> هذا اليوزر ليس عميلاً (${data.role})
+                    </div>`;
+                }
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-danger">
+                    <i class="fas fa-times-circle"></i> لم يتم العثور على عميل بهذا الاسم
+                </div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+});
+
+// Toggle delete value visibility
+document.getElementById('delete_mode').addEventListener('change', function() {
+    const valueGroup = document.getElementById('deleteValueGroup');
+    if (this.value === 'never') {
+        valueGroup.style.display = 'none';
+    } else {
+        valueGroup.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

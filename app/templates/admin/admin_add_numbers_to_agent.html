@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">إضافة أرقام لليوزر</h3>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" id="addNumbersForm">
+                        <div class="form-group">
+                            <label for="agent_username">يوزر اليوزر (اكتبه وسيقوم بالبحث)</label>
+                            <input type="text" name="agent_username" id="agent_username"
+                                   class="form-control" placeholder="اكتب يوزر اليوزر هنا..."
+                                   autocomplete="off" required>
+                            <small class="form-text text-muted">
+                                سيقوم بالبحث عن اليوزر تلقائياً
+                            </small>
+                            <div id="userSearchResult" class="mt-2"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="range_id">اختر الرينج (Range)</label>
+                            <select name="range_id" id="range_id" class="form-control" required>
+                                <option value="">-- اختر الرينج --</option>
+                                {% for range in ranges %}
+                                <option value="{{ range.id }}">
+                                    {{ range.prefix }} - {{ range.country }}
+                                    ({{ range.numbers.filter_by(agent_id=None).count() }} متاح)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="numbers_count">عدد الأرقام للإضافة</label>
+                            <input type="number" name="numbers_count" id="numbers_count"
+                                   class="form-control" value="1" min="1" required>
+                            <small class="form-text text-muted">
+                                أدخل عدد الأرقام المراد إضافتها (بدون حد أقصى)
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> إضافة الأرقام وتنزيل الملف
+                        </button>
+                        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> العودة للوحة التحكم
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('agent_username').addEventListener('input', function() {
+    const username = this.value.trim();
+    const resultDiv = document.getElementById('userSearchResult');
+
+    if (username.length < 2) {
+        resultDiv.innerHTML = '';
+        return;
+    }
+
+    // البحث عن اليوزر
+    fetch(`/admin/search-user?username=${encodeURIComponent(username)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.found) {
+                resultDiv.innerHTML = `<div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> تم العثور على اليوزر: <strong>${data.username}</strong>
+                    (${data.email}) - ${data.role}
+                </div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> لم يتم العثور على يوزر بهذا الاسم
+                </div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+});
+</script>
+{% endblock %}

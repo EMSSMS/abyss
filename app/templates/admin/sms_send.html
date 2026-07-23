@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Send SMS - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-paper-plane"></i> Send SMS</h4>
+        </div>
+    </div>
+</div>
+
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-paper-plane"></i> Send SMS Message</h5>
+    </div>
+    <div class="widget-content">
+        <form method="POST" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">SMS Number *</label>
+                <div class="col-sm-9">
+                    <select name="number" class="form-control" required>
+                        <option value="">Select SMS Number...</option>
+                        {% for num in sms_numbers %}
+                        <option value="{{ num.number }}">{{ num.number }} ({{ num.sms_range.country if num.sms_range else 'N/A' }})</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Select the number that will send the SMS</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">CLI (Sender ID) *</label>
+                <div class="col-sm-9">
+                    <input type="text" name="cli" class="form-control" placeholder="e.g., WhatsApp, Viber, Facebook Messenger" required>
+                    <small class="text-muted">The application/platform sending the message (e.g., WhatsApp, Viber, Facebook)</small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Message *</label>
+                <div class="col-sm-9">
+                    <textarea name="message" class="form-control" rows="5" placeholder="Enter your SMS message here..." required></textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Send SMS</button>
+                    <a href="{{ url_for('admin.index') }}" class="btn btn-default">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="widget-block" style="margin-top: 20px;">
+    <div class="widget-head">
+        <h5><i class="fa fa-info-circle"></i> How it works</h5>
+    </div>
+    <div class="widget-content">
+        <ul>
+            <li><strong>SMS Number:</strong> Select a number from your account to send the SMS</li>
+            <li><strong>CLI:</strong> This identifies the sender application (WhatsApp, Viber, Facebook Messenger, etc.)</li>
+            <li><strong>Message:</strong> The actual SMS content that will be sent</li>
+            <li><strong>Note:</strong> This is a simulation - actual SMS sending requires integration with SMS gateway</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit User' if user else 'Create User' }} - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-user"></i> {{ 'Edit User' if user else 'Create User' }}</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-edit"></i> User Details</h5>
+            </div>
+            <div class="widget-content">
+                <form method="POST" action="{{ url_for('admin.create_user') if not user else url_for('admin.edit_user', user_id=user.id) }}">
+                    <div class="form-group">
+                        <label>Username *</label>
+                        <input type="text" name="username" class="form-control" value="{{ user.username if user else '' }}" required {% if user %}readonly{% endif %}>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email if user else '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password {% if not user %}*{% endif %}</label>
+                        <input type="password" name="password" class="form-control" {% if not user %}required{% endif %}>
+                        {% if user %}
+                        <small class="text-muted">Leave blank to keep current password</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Role *</label>
+                        <select name="role_id" class="form-control" required>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}" {% if user and user.role_id == role.id %}selected{% endif %}>{{ role.display_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Agent (for clients)</label>
+                        <select name="agent_id" class="form-control">
+                            <option value="">None</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.id }}" {% if user and user.agent_id == agent.id %}selected{% endif %}>{{ agent.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ user.name if user else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <input type="text" name="company" class="form-control" value="{{ user.company if user else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" name="country" class="form-control" value="{{ user.country if user else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>SMS Limit</label>
+                        <input type="number" name="sms_limit" class="form-control" value="{{ user.sms_limit if user else '0' }}">
+                        <small class="text-muted">Maximum numbers this user can have (0 = unlimited)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Active</label>
+                        <select name="is_active" class="form-control">
+                            <option value="1" {% if user and user.is_active %}selected{% endif %}>Yes</option>
+                            <option value="0" {% if user and not user.is_active %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}SMS Ranges - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-flag"></i> SMS Ranges</h4>
+        </div>
+    </div>
+</div>
+
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-list"></i> SMS Ranges</h5>
+        <a href="{{ url_for('admin.create_sms_range') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Add New Range</a>
+    </div>
+    <div class="widget-content">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Prefix</th>
+                        <th>Country</th>
+                        <th>Available</th>
+                        <th>Reserved</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if ranges.items %}
+                    {% for range in ranges.items %}
+                    <tr>
+                        <td>{{ range.id }}</td>
+                        <td><strong>{{ range.name or 'N/A' }}</strong></td>
+                        <td><strong>{{ range.prefix }}</strong></td>
+                        <td>{{ range.country }}</td>
+                        <td>
+                            <span class="text-success">{{ range.get_available_count() }}</span>
+                        </td>
+                        <td>
+                            <span class="text-info">{{ range.get_reserved_count() }}</span>
+                        </td>
+                        <td>{{ range.cost_per_sms if range.cost_per_sms else '0.005' }}</td>
+                        <td>
+                            {% if range.is_active %}
+                            <span class="label label-success">Active</span>
+                            {% else %}
+                            <span class="label label-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_sms_range', range_id=range.id) }}" class="btn btn-xs btn-warning"><i class="fa fa-edit"></i></a>
+                            <form action="{{ url_for('admin.delete_sms_range', range_id=range.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure? This will delete the range.')">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No SMS ranges found.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if ranges.pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if ranges.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.sms_ranges', page=ranges.prev_num) }}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for p in range(1, ranges.pages + 1) %}
+                <li class="page-item {% if p == ranges.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.sms_ranges', page=p) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+
+                {% if ranges.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.sms_ranges', page=ranges.next_num) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

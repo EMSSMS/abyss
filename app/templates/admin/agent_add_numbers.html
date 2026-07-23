@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Add Numbers to Your Account</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Current Status:</strong><br>
+                        Numbers you have: <strong>{{ current_numbers }}</strong> / {{ max_numbers }} maximum<br>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: {{ (current_numbers / max_numbers * 100)|round }}%;"
+                                 aria-valuenow="{{ current_numbers }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="{{ max_numbers }}">
+                                {{ current_numbers }} / {{ max_numbers }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="form-group">
+                            <label for="range_id">Select Range</label>
+                            <select name="range_id" id="range_id" class="form-control" required>
+                                <option value="">-- Select Range --</option>
+                                {% for range in ranges %}
+                                <option value="{{ range.id }}">
+                                    {{ range.prefix }} - {{ range.country }}
+                                    ({{ range.numbers.filter_by(agent_id=None).count() }} available)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="numbers_count">Number of Numbers to Add</label>
+                            <input type="number" name="numbers_count" id="numbers_count"
+                                   class="form-control" value="1" min="1" max="500" required>
+                            <small class="form-text text-muted">
+                                Maximum 500 numbers at a time.
+                                {% if current_numbers < 500 %}
+                                You can add up to {{ 500 - current_numbers }} more numbers.
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Numbers
+                        </button>
+                        <a href="{{ url_for('admin.agent_my_numbers') }}" class="btn btn-secondary">
+                            <i class="fas fa-list"></i> View My Numbers
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

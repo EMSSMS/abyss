@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}{% if range_obj %}Edit{% else %}Create{% endif %} SMS Range — ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <h4>
+        <i class="fa fa-flag"></i>
+        {% if range_obj %}Edit{% else %}Create{% endif %} SMS Range
+    </h4>
+</div>
+
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-plus-circle"></i> Range Information</h5>
+    </div>
+    <div class="widget-content">
+        <form method="POST" enctype="multipart/form-data" id="rangeForm">
+
+            {% if not range_obj %}
+            <!-- ══ FILE UPLOAD (first) ══════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">
+                            <i class="fa fa-upload"></i> Numbers File
+                            <small class="text-muted" style="font-weight:400;">(TXT or CSV)</small>
+                        </label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="file" name="csv_file" id="csv_file"
+                               class="form-control" accept=".csv,.txt"
+                               onchange="detectFile(this)">
+                        <span class="help-block">One number per line, or CSV with number in column 1.</span>
+                        <div class="file-detect-box" id="detectBox">
+                            <i class="fa fa-magic"></i>
+                            <strong>Auto-detected:</strong> &nbsp;
+                            Format: <span class="detect-accent" id="detFmt">—</span>
+                            &nbsp;|&nbsp; Country: <span class="detect-accent" id="detCountry">—</span>
+                            &nbsp;|&nbsp; Prefix: <span class="detect-accent" id="detPrefix">—</span>
+                            &nbsp;|&nbsp; Numbers: <span class="detect-count" id="detCount">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            {% endif %}
+
+            <!-- ══ RANGE NAME ══════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Range Name *</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" name="name" id="rangeName" class="form-control"
+                               value="{{ range_obj.name if range_obj else '' }}"
+                               placeholder="e.g. Egypt WE" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ PREFIX ═══════════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Prefix *</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" name="prefix" id="rangePrefix" class="form-control"
+                               value="{{ range_obj.prefix if range_obj else '' }}"
+                               placeholder="e.g. 20" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ COUNTRY ══════════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Country *</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" name="country" id="rangeCountry" class="form-control"
+                               value="{{ range_obj.country if range_obj else '' }}"
+                               placeholder="e.g. Egypt" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ APPLICATION ═══════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Application</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <select name="application" id="rangeApp" class="form-control">
+                            <option value="">— Select Application —</option>
+                            {% set apps = [
+                                ('whatsapp','📱 WhatsApp'),('facebook','📘 Facebook'),
+                                ('telegram','✈️ Telegram'),('google','🔍 Google'),
+                                ('instagram','📷 Instagram'),('tiktok','🎵 TikTok'),
+                                ('twitter','🐦 Twitter / X'),('snapchat','👻 Snapchat'),
+                                ('viber','💜 Viber'),('line','💚 LINE'),
+                                ('other','🌐 Other')
+                            ] %}
+                            {% for val, label in apps %}
+                            <option value="{{ val }}"
+                                {% if range_obj and range_obj.application == val %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <span class="help-block">OTP platform for this range.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ TEST NUMBER ══════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Test Number</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <input type="text" name="test_number" class="form-control"
+                               value="{{ range_obj.test_number if range_obj else '' }}"
+                               placeholder="e.g. 201012345678">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ ACTIVE ════════════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="control-label">Active</label>
+                    </div>
+                    <div class="col-sm-9">
+                        <label class="checkbox-inline" style="padding-top:6px;">
+                            <input type="checkbox" name="is_active"
+                                   {% if not range_obj or range_obj.is_active %}checked{% endif %}>
+                            &nbsp;Enable this range
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SUBMIT ════════════════════════════════════════════════════ -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-9 col-sm-offset-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i>
+                            {% if range_obj %}Update{% else %}Create{% endif %} Range
+                        </button>
+                        <a href="{{ url_for('admin.sms_ranges') }}" class="btn btn-default" style="margin-left:8px;">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── 80+ Country prefix map (sorted longest-first for correct matching) ──
+var PREFIX_MAP = [
+    // 3-digit prefixes first
+    {p:'213',c:'Algeria'},{p:'244',c:'Angola'},{p:'501',c:'Belize'},{p:'229',c:'Benin'},
+    {p:'267',c:'Botswana'},{p:'226',c:'Burkina Faso'},{p:'257',c:'Burundi'},{p:'237',c:'Cameroon'},
+    {p:'238',c:'Cape Verde'},{p:'236',c:'Central African Republic'},{p:'235',c:'Chad'},
+    {p:'269',c:'Comoros'},{p:'242',c:'Congo'},{p:'243',c:'DR Congo'},{p:'253',c:'Djibouti'},
+    {p:'240',c:'Equatorial Guinea'},{p:'291',c:'Eritrea'},{p:'268',c:'Eswatini'},
+    {p:'251',c:'Ethiopia'},{p:'241',c:'Gabon'},{p:'220',c:'Gambia'},{p:'233',c:'Ghana'},
+    {p:'224',c:'Guinea'},{p:'245',c:'Guinea-Bissau'},{p:'254',c:'Kenya'},{p:'266',c:'Lesotho'},
+    {p:'231',c:'Liberia'},{p:'218',c:'Libya'},{p:'261',c:'Madagascar'},{p:'265',c:'Malawi'},
+    {p:'223',c:'Mali'},{p:'222',c:'Mauritania'},{p:'230',c:'Mauritius'},{p:'212',c:'Morocco'},
+    {p:'258',c:'Mozambique'},{p:'264',c:'Namibia'},{p:'227',c:'Niger'},{p:'234',c:'Nigeria'},
+    {p:'250',c:'Rwanda'},{p:'239',c:'Sao Tome and Principe'},{p:'221',c:'Senegal'},
+    {p:'248',c:'Seychelles'},{p:'232',c:'Sierra Leone'},{p:'252',c:'Somalia'},
+    {p:'249',c:'Sudan'},{p:'211',c:'South Sudan'},{p:'255',c:'Tanzania'},{p:'228',c:'Togo'},
+    {p:'216',c:'Tunisia'},{p:'256',c:'Uganda'},{p:'260',c:'Zambia'},{p:'263',c:'Zimbabwe'},
+    // Middle East 3-digit
+    {p:'966',c:'Saudi Arabia'},{p:'971',c:'UAE'},{p:'968',c:'Oman'},{p:'965',c:'Kuwait'},
+    {p:'974',c:'Qatar'},{p:'973',c:'Bahrain'},{p:'967',c:'Yemen'},{p:'963',c:'Syria'},
+    {p:'962',c:'Jordan'},{p:'961',c:'Lebanon'},{p:'964',c:'Iraq'},{p:'970',c:'Palestine'},
+    {p:'972',c:'Israel'},
+    // Asia 3-digit
+    {p:'880',c:'Bangladesh'},{p:'855',c:'Cambodia'},{p:'856',c:'Laos'},{p:'853',c:'Macau'},
+    {p:'976',c:'Mongolia'},{p:'977',c:'Nepal'},{p:'960',c:'Maldives'},{p:'975',c:'Bhutan'},
+    {p:'673',c:'Brunei'},{p:'670',c:'East Timor'},
+    // Europe 3-digit
+    {p:'355',c:'Albania'},{p:'376',c:'Andorra'},{p:'374',c:'Armenia'},{p:'994',c:'Azerbaijan'},
+    {p:'375',c:'Belarus'},{p:'387',c:'Bosnia and Herzegovina'},{p:'357',c:'Cyprus'},
+    {p:'372',c:'Estonia'},{p:'995',c:'Georgia'},{p:'354',c:'Iceland'},{p:'371',c:'Latvia'},
+    {p:'423',c:'Liechtenstein'},{p:'370',c:'Lithuania'},{p:'352',c:'Luxembourg'},
+    {p:'356',c:'Malta'},{p:'373',c:'Moldova'},{p:'382',c:'Montenegro'},{p:'377',c:'Monaco'},
+    {p:'389',c:'North Macedonia'},{p:'47',c:'Norway'},  // skip, will handle 2-digit below
+    {p:'351',c:'Portugal'},{p:'40',c:'Romania'},
+    {p:'381',c:'Serbia'},{p:'421',c:'Slovakia'},{p:'386',c:'Slovenia'},
+    {p:'358',c:'Finland'},{p:'353',c:'Ireland'},{p:'385',c:'Croatia'},
+    // Americas 3-digit
+    {p:'502',c:'Guatemala'},{p:'503',c:'El Salvador'},{p:'504',c:'Honduras'},
+    {p:'505',c:'Nicaragua'},{p:'506',c:'Costa Rica'},{p:'507',c:'Panama'},
+    {p:'509',c:'Haiti'},{p:'592',c:'Guyana'},{p:'591',c:'Bolivia'},{p:'593',c:'Ecuador'},
+    {p:'595',c:'Paraguay'},{p:'598',c:'Uruguay'},{p:'597',c:'Suriname'},
+    // Oceania
+    {p:'675',c:'Papua New Guinea'},{p:'679',c:'Fiji'},{p:'685',c:'Samoa'},
+    // 2-digit prefixes
+    {p:'93',c:'Afghanistan'},{p:'92',c:'Pakistan'},{p:'91',c:'India'},
+    {p:'86',c:'China'},{p:'81',c:'Japan'},{p:'82',c:'South Korea'},
+    {p:'84',c:'Vietnam'},{p:'66',c:'Thailand'},{p:'65',c:'Singapore'},
+    {p:'62',c:'Indonesia'},{p:'63',c:'Philippines'},{p:'60',c:'Malaysia'},
+    {p:'95',c:'Myanmar'},{p:'94',c:'Sri Lanka'},{p:'98',c:'Iran'},{p:'90',c:'Turkey'},
+    {p:'20',c:'Egypt'},{p:'27',c:'South Africa'},
+    {p:'44',c:'United Kingdom'},{p:'33',c:'France'},{p:'49',c:'Germany'},
+    {p:'39',c:'Italy'},{p:'34',c:'Spain'},{p:'31',c:'Netherlands'},
+    {p:'32',c:'Belgium'},{p:'41',c:'Switzerland'},{p:'43',c:'Austria'},
+    {p:'48',c:'Poland'},{p:'46',c:'Sweden'},{p:'45',c:'Denmark'},
+    {p:'30',c:'Greece'},{p:'36',c:'Hungary'},{p:'38',c:'Ukraine'},
+    {p:'7',c:'Russia / Kazakhstan'},{p:'55',c:'Brazil'},{p:'52',c:'Mexico'},
+    {p:'54',c:'Argentina'},{p:'57',c:'Colombia'},{p:'56',c:'Chile'},
+    {p:'51',c:'Peru'},{p:'58',c:'Venezuela'},{p:'61',c:'Australia'},
+    {p:'64',c:'New Zealand'},
+    // 1-digit
+    {p:'1',c:'USA / Canada'},
+];
+// Sort longest prefix first
+PREFIX_MAP.sort(function(a,b){ return b.p.length - a.p.length; });
+
+function detectCountry(num) {
+    for (var i = 0; i < PREFIX_MAP.length; i++) {
+        if (num.indexOf(PREFIX_MAP[i].p) === 0)
+            return PREFIX_MAP[i];
+    }
+    return null;
+}
+
+function detectFile(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var ext = file.name.split('.').pop().toLowerCase();
+    document.getElementById('detFmt').textContent = ext.toUpperCase();
+    document.getElementById('detectBox').style.display = 'block';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var lines = e.target.result.split('\n')
+            .map(function(l){ return l.trim(); })
+            .filter(Boolean);
+        document.getElementById('detCount').textContent = lines.length + ' numbers';
+
+        var firstNum = (lines[0] || '').split(',')[0].replace(/\D/g, '');
+        if (!firstNum) return;
+
+        var det = detectCountry(firstNum);
+        if (det) {
+            document.getElementById('detCountry').textContent = det.c;
+            document.getElementById('detPrefix').textContent  = '+' + det.p;
+            var cf = document.getElementById('rangeCountry');
+            var pf = document.getElementById('rangePrefix');
+            var nf = document.getElementById('rangeName');
+            if (!cf.value) cf.value = det.c;
+            if (!pf.value) pf.value = det.p;
+            if (!nf.value) nf.value = det.c + ' Range';
+        } else {
+            document.getElementById('detCountry').textContent = 'Unknown';
+            document.getElementById('detPrefix').textContent  = '?';
+        }
+    };
+    reader.readAsText(file);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}User Details - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-user"></i> User Details</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-user"></i> Account Information</h5>
+            </div>
+            <div class="widget-content">
+                <table class="table">
+                    <tr>
+                        <th>User ID:</th>
+                        <td>{{ user.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Username:</th>
+                        <td><strong>{{ user.username }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Role:</th>
+                        <td><span class="label label-default">{{ user.role.display_name if user.role else 'N/A' }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="label label-success">Active</span>
+                            {% else %}
+                            <span class="label label-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Agent:</th>
+                        <td>
+                            {% if user.agent %}
+                            {{ user.agent.username }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-key"></i> API Access</h5>
+            </div>
+            <div class="widget-content">
+                <table class="table">
+                    <tr>
+                        <th>API Token:</th>
+                        <td><code>{{ user.api_token }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Login Attempts:</th>
+                        <td>{{ user.login_attempts }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Login:</th>
+                        <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Created:</th>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-info-circle"></i> Profile Information</h5>
+            </div>
+            <div class="widget-content">
+                <table class="table">
+                    <tr>
+                        <th>Full Name:</th>
+                        <td>{{ user.name or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Company:</th>
+                        <td>{{ user.company or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Country:</th>
+                        <td>{{ user.country or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Contact:</th>
+                        <td>{{ user.contact or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Skype:</th>
+                        <td>{{ user.skype or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Address:</th>
+                        <td>{{ user.address or 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 text-center">
+        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+        <a href="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="btn btn-{% if user.is_active %}danger{% else %}success{% endif %}">
+            <i class="fa fa-{% if user.is_active %}lock{% else %}unlock{% endif %}"></i> {{ 'Deactivate' if user.is_active else 'Activate' }}
+        </a>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+    </div>
+</div>
+{% endblock %}

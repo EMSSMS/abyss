@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% block title %}SMS Monitor — ABYSS SMS{% endblock %}
+
+{% block extra_css %}
+<style>
+#msgTable tbody tr { transition: background .3s; }
+#msgTable tbody tr.new-row { animation: fadeIn .5s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.ticker {
+    font-size: 11px; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 6px;
+}
+.countdown-ring {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 6s linear infinite;
+    display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.run-btn { min-width: 110px; }
+
+/* source pills */
+.source-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.pill-a   { background:#0d2a3e; color:#5bc0f8; border:1px solid #1a4f72; }
+.pill-b   { background:#1a1040; color:#b48cff; border:1px solid #3d2080; }
+.pill-c   { background:#0d2e1a; color:#5bf8a0; border:1px solid #1a5e34; }
+.pill-d   { background:#2e1a0d; color:#f8b85b; border:1px solid #5e3a1a; }
+.pill-e   { background:#1a2e2e; color:#5bf8f8; border:1px solid #1a5e5e; }
+.pill-ext { background:#2d2d2d; color:#aaa;    border:1px solid #444; }
+
+/* source cards */
+.src-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px; background: var(--card-bg);
+    cursor: default;
+}
+.src-card .src-label { font-weight: 600; font-size: 13px; min-width: 80px; }
+.src-card .src-type  { font-size: 11px; color: var(--text-secondary); min-width: 80px; }
+.src-card .src-token {
+    font-family: monospace; font-size: 12px;
+    color: var(--text-secondary); flex: 1;
+    cursor: pointer; padding: 3px 8px;
+    border-radius: 4px; border: 1px dashed var(--border);
+    transition: background .2s;
+}
+.src-card .src-token:hover { background: rgba(255,255,255,.05); color: var(--accent); }
+.src-card .src-status { font-size: 12px; margin-left: auto; }
+.src-ok  { color: #2ed573; }
+.src-err { color: #ff4757; }
+.src-warn { color: #ffa502; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="breadcrumb">
+    <h4>
+        <span class="live-dot"></span>
+        SMS Monitor
+        <small class="text-muted" style="font-size:13px;font-weight:400;margin-left:8px;">
+            External Sources → Reserved Numbers
+        </small>
+    </h4>
+</div>
+
+<!-- Stats Row -->
+<div class="row" id="statsRow">
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-number" id="statToday">{{ today_count }}</div>
+            <div class="stat-label">Today Received</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-number" id="statTotal">{{ total_count }}</div>
+            <div class="stat-label">Total Received</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-number" id="statFetched">—</div>
+            <div class="stat-label">Last Cycle Fetched</div>
+        </div>
+    </div>
+</div>
+
+<!-- Control bar -->
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-play-circle"></i> Auto Fetch &amp; Forward</h5>
+        <div class="ticker">
+            <span class="countdown-ring" id="ring"></span>
+            <span id="tickerTxt">refreshing every 6s</span>
+        </div>
+    </div>
+    <div class="widget-content" style="padding:14px 20px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary run-btn"  onclick="runCycle('all')"     id="btnAll">
+                <i class="fa fa-refresh"></i> Run All
+            </button>
+            <button class="btn btn-info run-btn"     onclick="runCycle('panel4')"  id="btnA">
+                <i class="fa fa-server"></i> Source A
+            </button>
+            <button class="btn btn-default run-btn"  onclick="runCycle('flynn')"   id="btnB"
+                    style="border-color:#3d2080;color:#b48cff;">
+                <i class="fa fa-server"></i> Source B
+            </button>
+            <button class="btn btn-success run-btn"  onclick="runCycle('timesms')" id="btnC">
+                <i class="fa fa-clock-o"></i> Source C
+            </button>
+            <button class="btn btn-warning run-btn"  onclick="runCycle('hadi')"    id="btnD"
+                    style="color:#333;">
+                <i class="fa fa-cloud"></i> Source D
+            </button>
+            <button class="btn btn-default run-btn"  onclick="runCycle('numper')"  id="btnE"
+                    style="border-color:#1a5e5e;color:#5bf8f8;">
+                <i class="fa fa-database"></i> Source E
+            </button>
+            <span id="cycleStatus" style="font-size:12px;color:var(--text-secondary);margin-left:6px;"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Sources -->
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-plug"></i> Sources</h5>
+        <small style="color:var(--text-secondary);font-size:11px;">
+            Click token card to copy · Provider names are confidential
+        </small>
+    </div>
+    <div class="widget-content" style="padding:12px 20px;">
+        {% for src in sources_info %}
+        <div class="src-card">
+            <span class="source-pill pill-{{ src.key[0] if src.key != 'timesms' else 'c' }}
+                                           pill-{{ 'a' if src.key=='panel4' else
+                                                   'b' if src.key=='flynn'  else
+                                                   'c' if src.key=='timesms' else
+                                                   'd' if src.key=='hadi'   else 'e' }}">
+                <i class="fa {{ 'fa-server' if src.type=='Session' else 'fa-key' }}"></i>
+                {{ src.label }}
+            </span>
+            <span class="src-type">{{ src.type }}</span>
+            {% if src.token_masked %}
+            <span class="src-token"
+                  data-token="{{ src.token_full }}"
+                  onclick="copyToken(this)"
+                  title="Click to copy token">
+                {{ src.token_masked }}
+            </span>
+            {% else %}
+            <span class="src-type" style="flex:1;">Session Auth</span>
+            {% endif %}
+            <span class="src-status src-warn" id="status_{{ src.key }}">● checking…</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Messages table -->
+<div class="widget-block">
+    <div class="widget-head">
+        <h5><i class="fa fa-inbox"></i> Received Messages</h5>
+        <span style="font-size:12px;color:var(--text-secondary);" id="lastRefresh">—</span>
+    </div>
+    <div class="widget-content" style="padding:0;">
+        <div class="table-responsive">
+            <table class="table table-hover" id="msgTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Number</th>
+                        <th>CLI / App</th>
+                        <th>Message</th>
+                        <th>Agent</th>
+                    </tr>
+                </thead>
+                <tbody id="msgBody">
+                    {% for _ in range(5) %}
+                    <tr class="skeleton-tr">
+                        <td><span class="skeleton skeleton-text" style="width:30px;"></span></td>
+                        <td><span class="skeleton skeleton-text" style="width:110px;"></span></td>
+                        <td><span class="skeleton skeleton-text" style="width:100px;"></span></td>
+                        <td><span class="skeleton skeleton-text" style="width:80px;"></span></td>
+                        <td><span class="skeleton skeleton-text" style="width:200px;"></span></td>
+                        <td><span class="skeleton skeleton-text" style="width:60px;"></span></td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for r in received %}
+                    <tr data-id="{{ r.id }}">
+                        <td style="color:var(--text-secondary);font-size:12px;">{{ r.id }}</td>
+                        <td style="font-size:12px;white-space:nowrap;">
+                            {{ r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '—' }}
+                        </td>
+                        <td><code>{{ r.sms_number.number if r.sms_number else (r.destination or '—') }}</code></td>
+                        <td>
+                            {% if r.cli %}
+                            <span class="source-pill pill-ext" style="font-size:11px;">
+                                {{ r.cli }}
+                            </span>
+                            {% else %}
+                            <span style="color:var(--text-secondary);font-size:11px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width:280px;word-break:break-word;">{{ r.message or '—' }}</td>
+                        <td style="font-size:12px;">
+                            {{ r.sms_number.agent.username if (r.sms_number and r.sms_number.agent) else '—' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr id="emptyRow">
+                        <td colspan="6" style="text-align:center;padding:30px;color:var(--text-secondary);">
+                            <i class="fa fa-inbox fa-2x" style="display:block;margin-bottom:8px;"></i>
+                            No messages yet — click "Run All" to start fetching
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var SEEN_IDS = new Set(
+    Array.from(document.querySelectorAll('#msgBody tr[data-id]')).map(r => r.dataset.id)
+);
+var cycleRunning = false;
+
+// ── Copy token to clipboard ────────────────────────────────────────────────
+function copyToken(el) {
+    var token = el.getAttribute('data-token');
+    if (!token) return;
+    navigator.clipboard.writeText(token).then(function() {
+        var orig = el.textContent;
+        el.textContent = '✅ Copied!';
+        el.style.color = '#2ed573';
+        setTimeout(function() {
+            el.textContent = orig;
+            el.style.color = '';
+        }, 1800);
+    }).catch(function() {
+        // fallback
+        var ta = document.createElement('textarea');
+        ta.value = token;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        el.textContent = '✅ Copied!';
+        setTimeout(function() { location.reload(); }, 1800);
+    });
+}
+
+// ── Run fetch+forward cycle via AJAX ──────────────────────────────────────
+function runCycle(src) {
+    if (cycleRunning) return;
+    cycleRunning = true;
+    document.getElementById('cycleStatus').innerHTML =
+        '<i class="fa fa-spinner fa-spin"></i> fetching…';
+
+    var fd = new FormData();
+    fd.append('source', src);
+
+    fetch('{{ url_for("monitor.run_cycle") }}', {
+        method: 'POST',
+        headers: {'X-Requested-With': 'XMLHttpRequest'},
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        var st  = data.sources || {};
+        var parts = [];
+        var srcKeys = ['panel4','flynn','timesms','hadi','numper'];
+        var srcLabels = {panel4:'A', flynn:'B', timesms:'C', hadi:'D', numper:'E'};
+
+        srcKeys.forEach(function(k) {
+            if (st[k]) {
+                var ok = st[k].status === 'ok';
+                parts.push((ok ? '✅' : '⚠') + ' ' + srcLabels[k] + ':' + st[k].count);
+                var el = document.getElementById('status_' + k);
+                if (el) {
+                    el.innerHTML = ok
+                        ? '<span class="src-ok">● connected</span>'
+                        : '<span class="src-err">● ' + st[k].status + '</span>';
+                }
+            }
+        });
+        parts.push('fwd:' + data.forwarded);
+        if (data.total_earned) {
+            parts.push('earned:$' + data.total_earned.toFixed(4));
+        }
+
+        document.getElementById('statFetched').textContent = data.fetched || 0;
+        document.getElementById('cycleStatus').innerHTML =
+            '<span style="color:#2ed573;">' + parts.join(' | ') + '</span>';
+
+        loadMessages();
+        cycleRunning = false;
+    })
+    .catch(function(e) {
+        document.getElementById('cycleStatus').innerHTML =
+            '<span style="color:#ff4757;">❌ ' + e + '</span>';
+        cycleRunning = false;
+    });
+}
+
+// ── Load messages via AJAX ────────────────────────────────────────────────
+function loadMessages() {
+    fetch('{{ url_for("monitor.get_messages") }}?limit=50')
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+
+        document.getElementById('statToday').textContent = data.today_count;
+        document.getElementById('statTotal').textContent = data.total_count;
+        document.getElementById('lastRefresh').textContent =
+            'Last update: ' + new Date().toLocaleTimeString();
+
+        if (!data.messages || !data.messages.length) return;
+
+        var tbody = document.getElementById('msgBody');
+        tbody.querySelectorAll('.skeleton-tr').forEach(r => r.remove());
+        var empty = document.getElementById('emptyRow');
+        if (empty) empty.remove();
+
+        var newRows = [];
+        data.messages.forEach(function(m) {
+            if (SEEN_IDS.has(String(m.id))) return;
+            SEEN_IDS.add(String(m.id));
+            newRows.push(m);
+        });
+
+        newRows.reverse().forEach(function(m) {
+            var cliHtml = m.cli
+                ? '<span class="source-pill pill-ext" style="font-size:11px;">' +
+                  escHtml(m.cli) + '</span>'
+                : '<span style="color:var(--text-secondary);font-size:11px;">—</span>';
+
+            var tr = document.createElement('tr');
+            tr.className = 'new-row';
+            tr.setAttribute('data-id', m.id);
+            tr.innerHTML =
+                '<td style="color:var(--text-secondary);font-size:12px;">' + m.id + '</td>' +
+                '<td style="font-size:12px;white-space:nowrap;">' + m.date + '</td>' +
+                '<td><code>' + escHtml(m.number) + '</code></td>' +
+                '<td>' + cliHtml + '</td>' +
+                '<td style="max-width:280px;word-break:break-word;">' +
+                    escHtml(m.message.length > 120 ? m.message.substring(0,120) + '…' : m.message) +
+                '</td>' +
+                '<td style="font-size:12px;">' + escHtml(m.agent) + '</td>';
+            tbody.insertBefore(tr, tbody.firstChild);
+        });
+
+        // tag existing rows that lack data-id
+        tbody.querySelectorAll('tr:not([data-id])').forEach(function(tr) {
+            var fc = tr.querySelector('td');
+            if (fc) {
+                var id = fc.textContent.trim();
+                if (id && !isNaN(id)) {
+                    tr.setAttribute('data-id', id);
+                    SEEN_IDS.add(id);
+                }
+            }
+        });
+    })
+    .catch(function(){});
+}
+
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Auto refresh ──────────────────────────────────────────────────────────
+(function startAutoRefresh() {
+    loadMessages();
+    var tick = 0;
+    setInterval(function() {
+        tick++;
+        if (tick % 3 === 0) {
+            runCycle('all');  // كل 18 ثانية fetch+forward
+        } else {
+            loadMessages();   // كل 6 ثواني refresh جدول فقط
+        }
+    }, 6000);
+})();
+
+// ── Initial status check ──────────────────────────────────────────────────
+fetch('{{ url_for("monitor.get_status") }}')
+.then(r => r.json())
+.then(data => {
+    Object.keys(data).forEach(function(k) {
+        var el = document.getElementById('status_' + k);
+        if (!el) return;
+        var info = data[k];
+        if (info.type === 'session') {
+            el.innerHTML = info.logged_in
+                ? '<span class="src-ok">● connected</span>'
+                : '<span class="src-warn">● not logged in</span>';
+        } else {
+            el.innerHTML = '<span class="src-ok">● ready</span>';
+        }
+    });
+})
+.catch(function(){});
+</script>
+{% endblock %}

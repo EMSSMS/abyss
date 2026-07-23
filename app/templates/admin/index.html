@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - ABYSS SMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="breadcrumb">
+            <h4><i class="fa fa-shield"></i> Admin Panel</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.users') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-users" style="font-size: 48px; color: #e94560;"></i>
+                <h4 style="margin-top: 15px;">Manage Users</h4>
+                <p class="text-muted">View and edit user accounts</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.sms_ranges') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-flag" style="font-size: 48px; color: #28a745;"></i>
+                <h4 style="margin-top: 15px;">SMS Ranges</h4>
+                <p class="text-muted">Manage SMS ranges</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.sms_numbers') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-phone" style="font-size: 48px; color: #007bff;"></i>
+                <h4 style="margin-top: 15px;">SMS Numbers</h4>
+                <p class="text-muted">Manage SMS numbers</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.sms_send') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-paper-plane" style="font-size: 48px; color: #6f42c1;"></i>
+                <h4 style="margin-top: 15px;">Send SMS</h4>
+                <p class="text-muted">Send SMS to numbers</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.activity_logs') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-history" style="font-size: 48px; color: #fd7e14;"></i>
+                <h4 style="margin-top: 15px;">Activity Logs</h4>
+                <p class="text-muted">View all activity logs</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.sms_cdr') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-file-text" style="font-size: 48px; color: #17a2b8;"></i>
+                <h4 style="margin-top: 15px;">SMS CDR</h4>
+                <p class="text-muted">View SMS call records</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.admin_add_numbers_to_agent') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-user-plus" style="font-size: 48px; color: #20c997;"></i>
+                <h4 style="margin-top: 15px;">Add Numbers to Agent</h4>
+                <p class="text-muted">Assign numbers to agents</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.admin_delete_numbers_from_agent') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-trash-alt" style="font-size: 48px; color: #dc3545;"></i>
+                <h4 style="margin-top: 15px;">Delete Numbers</h4>
+                <p class="text-muted">Remove numbers from agent</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.admin_clients') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-user-tie" style="font-size: 48px; color: #e83e8c;"></i>
+                <h4 style="margin-top: 15px;">إدارة العملاء</h4>
+                <p class="text-muted">Manage Clients & Numbers</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.admin_add_numbers_to_client') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-plus-circle" style="font-size: 48px; color: #28a745;"></i>
+                <h4 style="margin-top: 15px;">إضافة أرقام للعميل</h4>
+                <p class="text-muted">Add numbers to client</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.admin_remove_numbers_from_client') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-minus-circle" style="font-size: 48px; color: #dc3545;"></i>
+                <h4 style="margin-top: 15px;">إزالة أرقام من العميل</h4>
+                <p class="text-muted">Remove numbers from client</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.message_settings') }}" class="widget-block" style="display: block; text-decoration: none; color: inherit;">
+            <div class="widget-content text-center" style="padding: 30px;">
+                <i class="fa fa-clock" style="font-size: 48px; color: #6f42c1;"></i>
+                <h4 style="margin-top: 15px;">إعدادات حذف الرسائل</h4>
+                <p class="text-muted">Message auto-delete settings</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-bar-chart"></i> System Statistics</h5>
+            </div>
+            <div class="widget-content">
+                <table class="table">
+                    <tr>
+                        <th>Total Users:</th>
+                        <td><strong>{{ stats.total_users }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Active Users:</th>
+                        <td><span class="label label-success">{{ stats.active_users }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Total SMS Ranges:</th>
+                        <td><strong>{{ stats.total_ranges }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Total SMS Numbers:</th>
+                        <td><strong>{{ stats.total_numbers }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Total CDR Records:</th>
+                        <td><strong>{{ stats.total_cdr }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>SMS Today:</th>
+                        <td><strong>{{ stats.today_sms }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="widget-block">
+            <div class="widget-head">
+                <h5><i class="fa fa-bullhorn"></i> News Management</h5>
+                <a href="{{ url_for('admin.create_news') }}" class="btn btn-primary btn-sm"><i class="fa fa-plus"></i> Add News</a>
+            </div>
+            <div class="widget-content">
+                <ul class="list-unstyled">
+                    {% if recent_news %}
+                    {% for news in recent_news %}
+                    <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <strong>{{ news.headline }}</strong>
+                        <br>
+                        <small class="text-muted">{{ news.created_at.strftime('%Y-%m-%d') if news.created_at else '' }}</small>
+                        <a href="{{ url_for('admin.delete_news', news_id=news.id) }}" class="btn btn-xs btn-danger pull-right" onclick="return confirm('Are you sure?')"><i class="fa fa-trash"></i></a>
+                    </li>
+                    {% endfor %}
+                    {% else %}
+                    <li class="text-muted">No news available.</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
